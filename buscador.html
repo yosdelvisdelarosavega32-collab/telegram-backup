@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buscador del Chat</title>
+<style>
+  body {
+    font-family: "Segoe UI", Roboto, sans-serif;
+    background-color: #e5ddd5;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 {
+    margin-top: 20px;
+    font-size: 1.8em;
+    color: #075E54;
+  }
+  #searchBox {
+    width: 90%;
+    max-width: 600px;
+    margin: 20px 0;
+    padding: 12px 18px;
+    border-radius: 30px;
+    border: none;
+    font-size: 1em;
+    outline: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  #results {
+    width: 90%;
+    max-width: 800px;
+    background: #fff;
+    border-radius: 15px;
+    padding: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    margin-bottom: 30px;
+  }
+  .result {
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+  }
+  .result:last-child { border-bottom: none; }
+  .name { color: #075E54; font-weight: bold; }
+  .time { float: right; color: #999; }
+  .text { margin-top: 6px; white-space: pre-wrap; }
+  .open-btn {
+    display: inline-block;
+    margin-top: 8px;
+    background-color: #25D366;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.9em;
+  }
+  .open-btn:hover { background-color: #1da851; }
+</style>
+</head>
+<body>
+
+<h1>🔍 Buscar en el Chat</h1>
+<input type="text" id="searchBox" placeholder="Escribe una palabra, nombre o fecha...">
+<div id="results"></div>
+
+<script>
+let indexData = [];
+
+async function cargarIndex() {
+  try {
+    const res = await fetch("./CHAT/index.json");
+    indexData = await res.json();
+    console.log(`📚 ${indexData.length} mensajes cargados.`);
+  } catch (e) {
+    console.error("❌ Error al cargar index.json", e);
+  }
+}
+
+document.getElementById("searchBox").addEventListener("input", e => {
+  const query = e.target.value.trim().toLowerCase();
+  const contenedor = document.getElementById("results");
+  contenedor.innerHTML = "";
+
+  if (query.length < 2) return;
+
+  const resultados = indexData.filter(m =>
+    m.text.toLowerCase().includes(query) ||
+    (m.name && m.name.toLowerCase().includes(query)) ||
+    (m.time && m.time.toLowerCase().includes(query))
+  ).slice(0, 100);
+
+  if (resultados.length === 0) {
+    contenedor.innerHTML = "<p style='text-align:center;color:#999'>Sin resultados</p>";
+    return;
+  }
+
+  resultados.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "result";
+    div.innerHTML = `
+      <div><span class="name">${r.name || "(Sin nombre)"}</span>
+           <span class="time">${r.time || ""}</span></div>
+      <div class="text">${r.text}</div>
+      <a class="open-btn" href="./CHAT/messages${r.page === 1 ? "" : r.page}.html#${r.id}" target="_blank">
+        Abrir conversación
+      </a>
+    `;
+    contenedor.appendChild(div);
+  });
+});
+
+cargarIndex();
+</script>
+
+</body>
+</html>
